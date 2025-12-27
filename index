@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oh! Whole | 全人实验室</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- 引入 Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@100;300;400;500;700;900&family=Noto+Serif+SC:wght@300;400;700&family=Reenie+Beanie&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Rock+Salt&display=swap" rel="stylesheet">
+
+    <style>
+        body { 
+            font-family: 'Noto Sans SC', sans-serif; 
+            background-color: #f4f4f0; 
+            color: #1a1a1a;
+            overflow-x: hidden;
+            overscroll-behavior: none; 
+        }
+        
+        .font-serif-sc { font-family: 'Noto Serif SC', serif; }
+        .font-graffiti { font-family: 'Reenie Beanie', cursive; }
+        .font-rock { font-family: 'Rock Salt', cursive; }
+        .font-mono-tech { font-family: 'Space Mono', monospace; }
+        
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .animate-scroll-reverse { animation: scrollReverse linear infinite; }
+        
+        @keyframes scrollReverse {
+            0% { transform: translateX(-50%); }
+            100% { transform: translateX(0); } 
+        }
+
+        /* 动画与交互 */
+        @keyframes deal-in {
+            0% { opacity: 0; transform: translateY(50px) scale(0.8) rotate(-5deg); }
+            60% { opacity: 1; transform: translateY(-10px) scale(1.05) rotate(2deg); }
+            100% { transform: translateY(0) scale(1) rotate(0); }
+        }
+        .card-deal-anim { animation: deal-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+
+        @keyframes bounce-slow {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .animate-bounce-slow { animation: bounce-slow 3s infinite ease-in-out; }
+        
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translate3d(0, 20px, 0); }
+            to { opacity: 1; transform: translate3d(0, 0, 0); }
+        }
+        .animate-fade-in-up { animation: fadeInUp 0.4s ease-out; }
+        
+        /* 裂痕闭合动画 */
+        @keyframes crack-heal {
+            0% { stroke-dashoffset: 0; opacity: 1; }
+            50% { stroke-dashoffset: 50; opacity: 0.5; }
+            100% { stroke-dashoffset: 100; opacity: 0; }
+        }
+        .animate-heal {
+            animation: crack-heal 0.8s ease-in-out forwards;
+        }
+
+        /* 奔跑动画 */
+        @keyframes running {
+            0% { transform: translateY(0) skewX(0); }
+            25% { transform: translateY(-1px) skewX(-5deg); }
+            50% { transform: translateY(0) skewX(0); }
+            75% { transform: translateY(-1px) skewX(5deg); }
+            100% { transform: translateY(0) skewX(0); }
+        }
+        .animate-run {
+            animation: running 0.4s infinite linear;
+        }
+        .group:hover .animate-run {
+            animation-play-state: paused;
+        }
+
+        .brutalist-border {
+            border: 2px solid #1a1a1a;
+            box-shadow: 4px 4px 0px #1a1a1a;
+            transition: all 0.2s ease;
+        }
+        .brutalist-border:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0px #1a1a1a;
+        }
+        .brutalist-border:active {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0px #1a1a1a;
+        }
+
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.65); 
+            backdrop-filter: blur(24px) saturate(180%);
+            -webkit-backdrop-filter: blur(24px) saturate(180%);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        /* 颜色定义 */
+        .text-daiqing { color: #164a5b; } 
+        .bg-neon-blue { background-color: #2b45f5; color: white; }
+        .text-neon-blue { color: #2b45f5; }
+        .bg-neon-green { background-color: #00ff9d; color: black; }
+        .bg-neon-pink { background-color: #ff00ff; color: white; }
+        .bg-neon-yellow { background-color: #fffb00; color: black; }
+        .bg-neon-orange { background-color: #ff5e00; color: white; }
+        .bg-neon-purple { background-color: #9d00ff; color: white; }
+        .bg-kintsugi-gold { background-color: #d4af37; }
+        
+        .cursor-grab { cursor: grab; }
+        .cursor-grabbing { cursor: grabbing; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // --- 1. 图标组件 ---
+        const Icons = {
+            ArrowRight: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>,
+            X: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>,
+            Menu: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>,
+            Layers: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>,
+            All: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>,
+            Book: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>,
+            Maximize: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>,
+            Minimize: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="3" x2="21" y2="3"/><line x1="8" y1="21" x2="21" y2="21"/><line x1="3" y1="12" x2="3.01" y2="12"/></svg>,
+            Download: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
+            WeChat: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M8.5,2C4.9,2,2,4.5,2,7.6c0,1.7,0.9,3.2,2.3,4.3l-0.5,1.7c-0.1,0.2,0,0.5,0.2,0.6c0.1,0,0.2,0,0.3-0.1l2.1-1.2 c0.7,0.2,1.4,0.3,2.1,0.3c3.6,0,6.5-2.5,6.5-5.6S12.1,2,8.5,2z M17,8c-3,0-5.5,2.1-5.5,4.6c0,1.4,0.8,2.7,2.1,3.5l-0.5,1.6 c-0.1,0.2,0,0.5,0.2,0.6c0.1,0,0.2,0,0.3-0.1l2-1.2c0.6,0.2,1.1,0.3,1.7,0.3c3,0,5.5-2.1,5.5-4.6S20,8,17,8z"/></svg>,
+            Discord: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.5328-9.7135-3.5686-13.638a.0766.0766 0 00-.032-.0277zM8.52 14.9736c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.419-2.1568 2.419zm7.0083 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.419-2.1568 2.419z"/></svg>,
+            XiaoHongShu: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6zm9 3.5c0-.83-.67-1.5-1.5-1.5S10 8.67 10 9.5c0 .4.15.76.4 1.04-.6.3-1.1.75-1.4 1.26-.2-.1-.4-.2-.6-.2-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5c.57 0 1.07-.32 1.33-.8.4-.7.9-1.3 1.57-1.7.2.2.4.3.6.3s.4-.1.6-.3c.67.4 1.17 1 1.57 1.7.26.48.76.8 1.33.8.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5c-.2 0-.4.1-.6.2-.3-.51-.8-.96-1.4-1.26.25-.28.4-.64.4-1.04z"/></svg>,
+            Alert: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>,
+            Play: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>,
+            FileText: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>,
+            PenTool: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 19 7-7 3 3-7 7-3-3z"/><path d="m18 13-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="m2 2 7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>,
+            ExternalLink: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>,
+            Database: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>,
+            Tool: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>,
+            Clipboard: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>,
+            
+            Sun: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2"/><path d="M12 21v2"/><path d="M4.22 4.22l1.42 1.42"/><path d="M18.36 18.36l1.42 1.42"/><path d="M1 12h2"/><path d="M21 12h2"/><path d="M4.22 19.78l1.42-1.42"/><path d="M18.36 5.64l1.42-1.42"/></svg>,
+            UserCheck: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>,
+            Compass: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>,
+            Zap: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
+            Anchor: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="5" r="3"/><line x1="12" y1="22" x2="12" y2="8"/><path d="M5 12H2a10 10 0 0 0 20 0h-3"/></svg>,
+            Droplet: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>,
+            Wind: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"/></svg>,
+            Grid: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>,
+            RefreshCw: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>,
+            Scissors: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>,
+            Circle: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/></svg>,
+            Rocket: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>,
+            Cpu: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>,
+            Hammer: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 12-8.5 8.5c-.83.83-2.17.83-3 0 0 0 0 0 0 0a2.12 2.12 0 0 1 0-3L12 9"/><path d="M17.64 15 22 10.64"/><path d="m20.91 11.7-1.25-1.25c-.6-.6-.93-1.4-.93-2.25V2.75A2.75 2.75 0 0 0 16 0h-2.25c-.85 0-1.65.33-2.25.93L10.25 2.18"/><path d="M7 8l-4 4"/></svg>,
+            Scale: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>,
+            
+            Map: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>,
+            Sprout: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 20h10"/><path d="M10 20c5.5-2.5.8-6.4 3-10"/><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"/><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"/></svg>,
+            Briefcase: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>,
+            Puzzle: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19.439 15.424a1 1 0 0 0-1.026 1.613l.964.964a2 2 0 0 1-2.828 2.828l-.964-.964a1 1 0 0 0-1.613 1.026V21a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-.586a1 1 0 0 0-1.613-1.026l-.964.964a2 2 0 0 1 2.828-2.828l.964.964a1 1 0 0 0 1.026-1.613H3a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h.586a1 1 0 0 0 1.026-1.613l-.964-.964a2 2 0 0 1 2.828-2.828l.964.964a1 1 0 0 0 1.613-1.026V3a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v.586a1 1 0 0 0 1.613 1.026l.964-.964a2 2 0 0 1 2.828 2.828l-.964.964a1 1 0 0 0 1.026 1.613H21a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-.561Z"/></svg>,
+            Star: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        };
+
+        // --- 2. 熊头 LOGO 组件 ---
+        const BearLogo = (props) => (
+            <svg {...props} viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 35 C 10 25, 10 10, 30 15 C 40 18, 60 18, 70 15 C 90 10, 90 25, 80 35 C 90 55, 80 85, 50 85 C 20 85, 10 55, 20 35 Z" />
+                <path d="M28 20 C 25 25, 20 25, 22 30" opacity="0.5"/>
+                <path d="M72 20 C 75 25, 80 25, 78 30" opacity="0.5"/>
+                <circle cx="38" cy="45" r="2.5" fill="currentColor" stroke="none"/>
+                <circle cx="62" cy="45" r="2.5" fill="currentColor" stroke="none"/>
+                <ellipse cx="50" cy="58" rx="8" ry="6" />
+                <path d="M50 64 L 50 70 Q 40 75 35 68 M 50 70 Q 60 75 65 68" />
+            </svg>
+        );
+
+        // --- 3. 奔跑的小人图标 (SVG + CSS 动画) ---
+        const RunningManIcon = () => (
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-run">
+                 <path d="M19 17l-2-4-3 4" />
+                 <path d="M13 13l-4-6-4 4" />
+                 <path d="M11 11l2 5-2 5" />
+                 <path d="M9 7l4 4 5-3" />
+                 <circle cx="9" cy="4" r="3" />
+            </svg>
+        );
+
+        // --- 3. 涂鸦风 SVG 头像库 ---
+        const doodleAvatars = [
+            <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="50" cy="50" r="40" /><path d="M30 45 Q35 40 40 45" /> <path d="M60 45 Q65 40 70 45" /><path d="M45 65 Q50 75 55 65" /><path d="M20 30 Q50 10 80 30 Q90 50 80 60" strokeDasharray="4 4" /></svg>,
+            <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><rect x="20" y="20" width="60" height="70" rx="10" /><circle cx="35" cy="45" r="8" /> <circle cx="65" cy="45" r="8" /><line x1="43" y1="45" x2="57" y2="45" /><line x1="40" y1="70" x2="60" y2="70" /><path d="M20 40 L10 40" /> <path d="M80 40 L90 40" /></svg>,
+            <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M30 30 Q10 10 50 5 Q90 10 70 30" fill="none" /><path d="M30 30 L30 80 Q50 95 70 80 L70 30" /><circle cx="40" cy="50" r="5" fill="currentColor" /><circle cx="65" cy="50" r="10" /><path d="M40 70 Q50 60 60 70" /></svg>,
+            <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="50" cy="50" rx="35" ry="45" /><circle cx="50" cy="40" r="15" /><circle cx="50" cy="40" r="5" fill="currentColor"/><path d="M40 75 Q50 85 60 75" /><path d="M15 50 L5 40" /> <path d="M85 50 L95 40" /></svg>,
+            <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M50 15 L85 85 L15 85 Z" /><line x1="35" y1="50" x2="45" y2="50" /> <line x1="55" y1="50" x2="65" y2="50" /><circle cx="50" cy="70" r="5" /><path d="M50 15 L50 5" /></svg>,
+            <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="50" cy="55" r="35" /><path d="M20 40 L25 10 L35 35 L45 5 L55 35 L65 5 L75 35 L80 10 L85 40" /><line x1="35" y1="55" x2="45" y2="60" /> <line x1="55" y1="60" x2="65" y2="55" /><path d="M35 75 L65 75 L50 80 Z" fill="currentColor"/></svg>,
+            <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M50 90 Q10 50 50 10 Q90 50 50 90 Z" /><line x1="50" y1="10" x2="50" y2="90" opacity="0.3"/><circle cx="35" cy="45" r="4" fill="currentColor"/> <circle cx="65" cy="45" r="4" fill="currentColor"/><path d="M40 65 Q50 70 60 65" /></svg>,
+            <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M30 20 L30 80 L70 80 L70 20" /><line x1="30" y1="40" x2="70" y2="40" /><circle cx="40" cy="30" r="2" fill="currentColor"/> <circle cx="60" cy="30" r="2" fill="currentColor"/><line x1="40" y1="60" x2="60" y2="60" /></svg>,
+            <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><rect x="25" y="25" width="50" height="60" rx="20" /><rect x="20" y="40" width="25" height="15" rx="5" /><rect x="55" y="40" width="25" height="15" rx="5" /><line x1="45" y1="47" x2="55" y2="47" /><path d="M40 75 Q50 80 60 75" /></svg>,
+            <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M70 20 A 40 40 0 1 1 40 90 A 30 30 0 1 0 70 20 Z" /><circle cx="45" cy="45" r="3" fill="currentColor"/><path d="M55 65 Q45 70 35 60" /></svg>
+        ];
+
+        // --- 4. 数据配置 ---
+        const categories = [
+            { id: "all", name: "全息视图 · All Dimensions", icon: Icons.All, color: "bg-black text-white", border: "border-black" },
+            { id: "awakening", name: "觉醒 · 存在根基", desc: "哲学追问：为何存在？", icon: Icons.Zap, color: "bg-neon-blue text-white", border: "border-blue-700" },
+            { id: "integration", name: "整合 · 内在秩序", desc: "心理建构：我是谁？", icon: Icons.Puzzle, color: "bg-neon-yellow text-black", border: "border-yellow-600" },
+            { id: "navigation", name: "导航 · 时代坐标", desc: "社会定位：身在何处？", icon: Icons.Map, color: "bg-neon-orange text-white", border: "border-orange-600" },
+            { id: "evolution", name: "进化 · 心智重塑", desc: "教育生长：如何生长？", icon: Icons.Sprout, color: "bg-neon-pink text-white", border: "border-pink-600" },
+            { id: "creation", name: "创造 · 价值回归", desc: "经济实践：以何为生？", icon: Icons.Briefcase, color: "bg-neon-green text-black", border: "border-green-600" },
+        ];
+
+        const moodImages = [
+            "https://images.unsplash.com/photo-1549490349-8643362247b5?w=600&q=80",
+            "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=600&q=80",
+            "https://images.unsplash.com/photo-1605721911519-3dfeb3be25e7?w=600&q=80",
+            "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&q=80",
+            "https://images.unsplash.com/photo-1507608616759-54f48f0af0ee?w=600&q=80",
+            "https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=600&q=80",
+            "https://images.unsplash.com/photo-1569705970380-c720e5e6f1f8?w=600&q=80",
+            "https://images.unsplash.com/photo-1550684847-75bdda21cc95?w=600&q=80",
+            "https://images.unsplash.com/photo-1574169208507-84376144848b?w=600&q=80",
+            "https://images.unsplash.com/photo-1515462277126-2dd0c162007a?w=600&q=80",
+        ];
+
+        const theories = [
+            // TODO: 在此处替换 pdfUrl 为真实的 PDF 文件链接
+            { id: 1, category: "awakening", keyword: "在世存在", en: "Being-in-the-world", icon: Icons.Sun, desc: "破碎的人是「常人」，整全的人是「本真」。", book: "《存在与时间》", author: "马丁·海德格尔", intro: "人被抛入世界，现代性导致我们往往按照他人期望生活（常人状态）。整全性修复，就是一条从失真的「常人」状态回归「本真存在」的路径。", pdfUrl: "https://easylink.cc/preview-placeholder?name=Heidegger", color: "bg-neon-blue", textColor: "text-white" },
+            { id: 2, category: "awakening", keyword: "单向度的人", en: "One-Dimensional Man", icon: Icons.Circle, desc: "恢复否定性思维，拒绝成为系统的单向度零件。", book: "《单向度的人》", author: "赫伯特·马尔库塞", intro: "发达工业社会成功压制了人们内心的否定性、批判性和超越性向度。整全性修复旨在恢复人的多维度，建立对系统的「批判距离」。", pdfUrl: "https://easylink.cc/preview-placeholder?name=Marcuse", color: "bg-neon-blue", textColor: "text-white" },
+            { id: 3, category: "awakening", keyword: "劳动异化", en: "Alienation of Labor", icon: Icons.Scissors, desc: "对抗劳动产品、过程、本质与人际的四重异化。", book: "《1844年经济学哲学手稿》", author: "卡尔·马克思", intro: "工作不应成为苦役。微型修复项目是对抗异化的微型实践：让产品属于自己，过程自主控制，恢复作为人的创造性。", pdfUrl: "https://easylink.cc/preview-placeholder?name=Marx", color: "bg-neon-blue", textColor: "text-white" },
+            { id: 4, category: "awakening", keyword: "自我技术", en: "Technologies of the Self", icon: Icons.PenTool, desc: "权力不仅压制，还生产主体性。", book: "《自我技术》", author: "米歇尔·福柯", intro: "现代主体是通过自我技术被构建的。整全性修复是一种「对抗性自我技术」，帮助用户摆脱被规训的主体性生产。", pdfUrl: "https://easylink.cc/preview-placeholder?name=Foucault", color: "bg-neon-blue", textColor: "text-white" },
+            { id: 5, category: "integration", keyword: "个体化", en: "Individuation", icon: Icons.UserCheck, desc: "整合人格面具与阴影，拥抱被压抑的部分，走向完整。", book: "《荣格自传》", author: "C.G. 荣格", intro: "职业标签往往是我们过度认同的「人格面具」。修复过程是个体化的加速器，帮助我们识别被压抑的「阴影能力」。", pdfUrl: "https://easylink.cc/preview-placeholder?name=Jung", color: "bg-neon-yellow", textColor: "text-black" },
+            { id: 6, category: "integration", keyword: "全象限整合", en: "Integral Theory (AQAL)", icon: Icons.Grid, desc: "在个体/集体、内部/外部四个象限中寻求平衡发展。", book: "《整合心理学》", author: "肯·威尔伯", intro: "大多数个人发展工具只关注单一象限。整全性修复同时处理四个象限：技能连接、意义重构、社区支持、工具系统。", pdfUrl: "https://easylink.cc/preview-placeholder?name=Wilber", color: "bg-neon-yellow", textColor: "text-black" },
+            { id: 7, category: "integration", keyword: "自转变心智", en: "Self-Transforming Mind", icon: Icons.RefreshCw, desc: "从「社会化心智」跃迁至「自主心智」，整合对立观点。", book: "《原本眼光》", author: "罗伯特·凯根", intro: "职业人通常停留在「他人怎么看我」的社会化心智阶段。修复帮助用户走向「自主心智」，从他人期望转向自我定义。", pdfUrl: "https://easylink.cc/preview-placeholder?name=Kegan", color: "bg-neon-yellow", textColor: "text-black" },
+            { id: 8, category: "integration", keyword: "心流", en: "Flow State", icon: Icons.Wind, desc: "清晰目标与即时反馈，在挑战与技能平衡中进入忘我。", book: "《心流》", author: "米哈里·契克森米哈赖", intro: "微型修复项目的设计原则：清晰的小目标、每日进度反馈、适中的挑战。心流不仅是最佳体验，更是修复过程中的治疗剂。", pdfUrl: "https://easylink.cc/preview-placeholder?name=Flow", color: "bg-neon-yellow", textColor: "text-black" },
+            { id: 9, category: "navigation", keyword: "生活政治", en: "Life Politics", icon: Icons.Compass, desc: "在抽象系统中建立本体性安全，实践生活政治。", book: "《现代性与自我认同》", author: "安东尼·吉登斯", intro: "现代社会中的自我认同是一个反思性项目。整全性修复是吉登斯意义上的「生活政治实践」，帮助我们在风险社会中建立信任。", pdfUrl: "https://easylink.cc/preview-placeholder?name=Giddens", color: "bg-neon-orange", textColor: "text-white" },
+            { id: 10, category: "navigation", keyword: "风险社会", en: "Risk Society", icon: Icons.Alert, desc: "制度保障减弱，发展应对个人化风险的能力。", book: "《风险社会》", author: "乌尔里希·贝克", intro: "现代社会从「稀缺社会」转向「风险社会」，制度性保障减弱。整全性修复不是逃避风险，而是发展在缺乏保障下的「风险应对能力」。", pdfUrl: "https://easylink.cc/preview-placeholder?name=Beck", color: "bg-neon-orange", textColor: "text-white" },
+            { id: 11, category: "navigation", keyword: "液态现代性", en: "Liquid Modernity", icon: Icons.Droplet, desc: "在流动的世界中建立临时锚点，学会在不确定中航行。", book: "《流动的现代性》", author: "齐格蒙特·鲍曼", intro: "关系、职业、身份都变得流动和不稳定。整全性修复是液态世界中的生存策略，不是寻找永久港湾，而是将微型项目作为临时锚点。", pdfUrl: "https://easylink.cc/preview-placeholder?name=Bauman", color: "bg-neon-orange", textColor: "text-white" },
+            { id: 12, category: "navigation", keyword: "惯习与场域", en: "Habitus & Field", icon: Icons.Layers, desc: "反思被内化的行为倾向，积累多维资本。", book: "《实践感》", author: "皮埃尔·布迪厄", intro: "职业化塑造了特定场域的惯习。整全性修复帮助用户意识到自己的惯习，并积累经济资本之外的文化与社会资本。", pdfUrl: "https://easylink.cc/preview-placeholder?name=Bourdieu", color: "bg-neon-orange", textColor: "text-white" },
+            { id: 13, category: "evolution", keyword: "变革性学习", en: "Transformative Learning", icon: Icons.Zap, desc: "利用迷失困境进行批判性反思，建立新的意义视角。", book: "《变革性学习》", author: "杰克·梅齐洛", intro: "职业危机往往是一种「迷失困境」。整全性修复促进变革性学习，帮助用户意识到现有视角的局限，批判性反思假设。", pdfUrl: "https://easylink.cc/preview-placeholder?name=Mezirow", color: "bg-neon-pink", textColor: "text-white" },
+            { id: 14, category: "evolution", keyword: "多元智能", en: "Multiple Intelligences", icon: Icons.Cpu, desc: "突破单一维度评价，发现并培养被忽视的智能。", book: "《智能的结构》", author: "霍华德·加德纳", intro: "传统教育和工作往往过度发展1-2种智能。整全性修复旨在恢复平衡，让语言、逻辑、空间、身体、音乐、人际、内省、自然等多元智能得到滋养。", pdfUrl: "https://easylink.cc/preview-placeholder?name=Gardner", color: "bg-neon-pink", textColor: "text-white" },
+            { id: 15, category: "evolution", keyword: "做中学", en: "Learning by Doing", icon: Icons.Hammer, desc: "行动+反思=学习。经验不断重组，教育即生活。", book: "《民主主义与教育》", author: "约翰·杜威", intro: "教育即生活。经验不是发生在你身上的事，而是你对发生的事做出的反应。微型项目是杜威哲学的当代实践。", pdfUrl: "https://easylink.cc/preview-placeholder?name=Dewey", color: "bg-neon-pink", textColor: "text-white" },
+            { id: 16, category: "creation", keyword: "嵌入性", en: "Embeddedness", icon: Icons.Anchor, desc: "拒绝经济脱嵌，将工作重新嵌入到整全的社会关系中。", book: "《大转型》", author: "卡尔·波兰尼", intro: "市场社会试图使经济从社会关系中「脱嵌」。整全性修复不是追求工作与生活的平衡，而是让经济活动重新「嵌入」到富有意义的整全生活中。", pdfUrl: "https://easylink.cc/preview-placeholder?name=Polanyi", color: "bg-neon-green", textColor: "text-black" },
+            { id: 17, category: "creation", keyword: "佛教经济学", en: "Buddhist Economics", icon: Icons.Scale, desc: "工作应发展才能、克服自我中心、生产恰当事物。", book: "《小即是美》", author: "E.F. 舒马赫", intro: "寻找能发展才能、建立真实连接、生产恰当事物的工作。这不仅是经济活动，更是克服自我中心的精神修行。", pdfUrl: "https://easylink.cc/preview-placeholder?name=Schumacher", color: "bg-neon-green", textColor: "text-black" },
+            { id: 18, category: "creation", keyword: "驱动力3.0", en: "Motivation 3.0", icon: Icons.Rocket, desc: "超越外在奖惩，依靠自主性、专精与目的感驱动。", book: "《驱动力》", author: "丹尼尔·平克", intro: "现代职场过度依赖外在奖励（驱动力2.0）。整全性修复恢复内在驱动力（3.0）：通过自主选择项目，逐步掌握技能，连接个人意义。", pdfUrl: "https://easylink.cc/preview-placeholder?name=Pink", color: "bg-neon-green", textColor: "text-black" }
+        ];
+
+        const actions = [
+            { id: 1, title: "重连身体", sub: "Body Reconnection", desc: "每天15分钟，不带目的的行走，只感受脚掌与大地的触碰。", tags: ["感知", "身体"] },
+            { id: 2, title: "数字断舍离", sub: "Digital Detox", desc: "每天黄金一小时，关闭所有屏幕，用纸笔记录当下闪过的念头。", tags: ["清理", "意识"] },
+            { id: 3, title: "未完成之书", sub: "The Unfinished Book", desc: "找出那本买了很久没读完的书，每天只读5页，并写下一句感悟。", tags: ["认知", "闭环"] },
+            { id: 4, title: "陌生人对话", sub: "Fear Interview", desc: "连续7天，每天与一位陌生人进行哪怕一分钟的非功利性交谈。", tags: ["连接", "勇气"] },
+            { id: 5, title: "微型创造", sub: "Micro Creation", desc: "用身边的废旧材料（快递盒/旧衣），制作一个无用但有趣的小物件。", tags: ["创造", "手作"] },
+            { id: 6, title: "暗影日记", sub: "Shadow Journal", desc: "记录每天让你感到愤怒或嫉妒的瞬间，分析背后的需求，拥抱阴影。", tags: ["心理", "整合"] },
+            { id: 7, title: "技能交换", sub: "Skill Barter", desc: "找到一个朋友，用你的一项小技能（如修图），交换他的一个故事。", tags: ["价值", "互助"] },
+            { id: 8, title: "城市观察者", sub: "Urban Observer", desc: "像人类学家一样，每天观察并记录社区里的一个微小变化。", tags: ["视角", "在场"] },
+            { id: 9, title: "感恩练习", sub: "Gratitude Loop", desc: "睡前写下三件具体的小事，不是为了正能量，而是为了看见‘拥有’。", tags: ["重构", "情绪"] },
+            { id: 10, title: "十分钟静默", sub: "Silent Retreat", desc: "每天给自己十分钟绝对的静默，不思考，只存在。", tags: ["存在", "灵性"] },
+        ];
+
+        // --- 5. 组件定义 (按依赖顺序) ---
+
+        const ActionModal = ({ action, onClose }) => (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={onClose}></div>
+                <div className="relative bg-[#f4f4f0] w-full max-w-4xl h-[85vh] flex flex-col md:flex-row border-2 border-white shadow-2xl overflow-hidden animate-fade-in-up">
+                    <button onClick={onClose} className="absolute top-4 right-4 hover:rotate-90 transition-transform z-20 bg-white rounded-full p-1"><Icons.X size={20}/></button>
+                    <div className="w-full md:w-3/5 bg-gray-100 relative flex flex-col">
+                        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center relative overflow-hidden">
+                            <div className="bg-white w-full max-w-sm rounded-xl shadow-lg overflow-hidden transform hover:scale-105 transition-transform duration-500">
+                                <div className="h-48 bg-gray-200 flex items-center justify-center relative">
+                                    <Icons.Play size={48} className="text-white drop-shadow-md opacity-80" />
+                                    <div className="absolute bottom-2 right-2 bg-black/50 text-white text-[10px] px-2 py-1 rounded">03:45</div>
+                                </div>
+                                <div className="p-4 text-left">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <div className="w-6 h-6 rounded-full bg-neon-blue"></div>
+                                        <span className="text-xs font-bold text-gray-500">Oh! Whole 官方号</span>
+                                    </div>
+                                    <h4 className="font-bold text-sm mb-1">{action.title}：打破日常的微型实验</h4>
+                                    <p className="text-xs text-gray-400">#全人实验室 #自我修复 #行动指南</p>
+                                </div>
+                            </div>
+                            <p className="mt-6 text-xs text-gray-400 uppercase tracking-widest">Social Media Preview</p>
+                        </div>
+                        {/* TODO: 替换为实际社媒链接 */}
+                        <a href="#" className="py-3 bg-white border-t border-gray-200 text-center text-xs font-bold hover:text-neon-blue transition-colors flex items-center justify-center gap-2">跳转至社交媒体观看完整版 <Icons.ArrowRight size={12}/></a>
+                    </div>
+                    <div className="w-full md:w-2/5 p-8 flex flex-col bg-white border-l border-gray-100">
+                        <div className="flex-1 overflow-y-auto pr-2">
+                            <span className="text-neon-blue font-bold text-xs tracking-widest uppercase mb-2 block">Action Kit 0{action.id}</span>
+                            <h3 className="text-3xl font-black mb-6">{action.title}</h3>
+                            <div className="space-y-6">
+                                <div><h4 className="font-bold text-sm mb-2 flex items-center gap-2"><Icons.Zap size={16}/> 行动核心</h4><p className="text-sm text-gray-600 leading-relaxed">{action.desc}</p></div>
+                                <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+                                    <h4 className="font-bold text-sm mb-3 flex items-center gap-2"><Icons.Briefcase size={16}/> 工具包内容</h4>
+                                    <ul className="text-sm text-gray-600 space-y-2">
+                                        <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-neon-blue"></div>7日行动指南 (PDF)</li>
+                                        <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-neon-blue"></div>进度追踪打卡表 (Notion)</li>
+                                        <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-neon-blue"></div>专属社群邀请码</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="mt-6 pt-6 border-t border-gray-100">
+                            {/* TODO: 替换为实际下载链接 */}
+                            <a href="#" className="w-full py-4 bg-black text-white font-bold hover:bg-neon-blue hover:text-white transition-all flex items-center justify-center gap-2 rounded-lg shadow-lg hover:shadow-neon-blue/50"><Icons.Download size={18}/> 立即下载工具包</a>
+                            <p className="text-[10px] text-center text-gray-400 mt-3">文件大小: 2.5MB · 格式: ZIP</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+
+        const PdfReader = ({ doc, onClose, onMinimize }) => {
+            const [isMaximized, setIsMaximized] = React.useState(false);
+            return (
+                <div className={`fixed z-[110] transition-all duration-300 ${isMaximized ? 'inset-0' : 'inset-4 md:inset-10'} flex flex-col bg-[#e0e0e0] border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]`}>
+                    <div className="bg-black text-white px-4 py-2 flex justify-between items-center select-none">
+                        <div className="flex items-center gap-2"><Icons.Book size={16} /><span className="font-bold text-sm tracking-wide line-clamp-1">{doc.book}</span></div>
+                        <div className="flex gap-2">
+                            <button onClick={onMinimize} className="hover:bg-gray-700 p-1 rounded"><Icons.Minimize size={14}/></button>
+                            <button onClick={() => setIsMaximized(!isMaximized)} className="hover:bg-gray-700 p-1 rounded"><Icons.Maximize size={14}/></button>
+                            <button onClick={onClose} className="hover:bg-red-600 p-1 rounded"><Icons.X size={14}/></button>
+                        </div>
+                    </div>
+                    <div className="flex-1 bg-white relative">
+                        <iframe src={doc.pdfUrl} className="w-full h-full border-none" title="PDF Viewer"></iframe>
+                        <div className="absolute inset-0 flex items-center justify-center -z-10 text-gray-400"><div className="text-center"><div className="animate-spin text-4xl mb-2">↻</div><p>Loading...</p></div></div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- 全人行动中枢弹窗组件 ---
+        const WholeActionMenuModal = ({ onClose }) => (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                <div className="absolute inset-0 bg-white/20 backdrop-blur-xl" onClick={onClose}></div>
+                <div className="relative bg-[#f4f4f0] border-4 border-black w-full max-w-2xl p-8 shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] flex flex-col animate-fade-in-up">
+                    <button onClick={onClose} className="absolute top-4 right-4 hover:rotate-90 transition-transform"><Icons.X size={24}/></button>
+                    
+                    <h3 className="text-3xl font-black mb-8 text-center flex items-center justify-center gap-3">
+                        <Icons.Zap className="text-neon-blue" size={32}/> 全人实验室
+                    </h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {[
+                            /* TODO: 替换为实际链接 */
+                            { title: "整全度测试", desc: "Integrity Assessment", icon: <Icons.Clipboard size={24}/>, link: "#", color: "bg-neon-blue text-white" },
+                            /* TODO: 替换为实际链接 */
+                            { title: "全人工具箱", desc: "AI Toolkit", icon: <Icons.Tool size={24}/>, link: "#", color: "bg-neon-pink text-white" },
+                            /* TODO: 确认社群跳转逻辑 */
+                            { title: "全人行动社群", desc: "Community", icon: <Icons.UserCheck size={24}/>, link: "#community", action: onClose, color: "bg-black text-white" },
+                            /* TODO: 替换为实际链接 */
+                            { title: "全人知识库", desc: "Knowledge Base", icon: <Icons.Database size={24}/>, link: "#", color: "bg-neon-green text-black" },
+                        ].map((item, idx) => (
+                            <a 
+                                key={idx} 
+                                href={item.link} 
+                                onClick={item.action}
+                                target={item.link.startsWith("#") ? "_self" : "_blank"}
+                                className={`p-6 border-2 border-black flex items-center gap-4 hover:scale-[1.02] transition-transform shadow-md ${item.color}`}
+                            >
+                                <div>{item.icon}</div>
+                                <div>
+                                    <div className="font-bold text-lg">{item.title}</div>
+                                    <div className="text-xs opacity-70 font-mono-tech uppercase">{item.desc}</div>
+                                </div>
+                            </a>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        );
+
+        // --- 创始人名片弹窗组件 ---
+        const FounderContactModal = ({ onClose }) => (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose}></div>
+                <div className="relative bg-white w-full max-w-sm p-8 shadow-2xl flex flex-col items-center text-center animate-fade-in-up border border-gray-200">
+                    <button onClick={onClose} className="absolute top-4 right-4 hover:text-gray-500"><Icons.X size={20}/></button>
+                    
+                    <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-6">
+                        <BearLogo className="w-12 h-12 text-gray-800" />
+                    </div>
+                    
+                    <h3 className="text-xl font-bold mb-1">大X不会水</h3>
+                    <p className="text-sm text-gray-500 mb-6 font-serif-sc">全人实验室发起人</p>
+                    
+                    <div className="w-full h-px bg-gray-200 mb-6"></div>
+                    
+                    {/* TODO: 替换为实际二维码图片 */}
+                    <div className="w-40 h-40 bg-gray-100 mb-4 flex items-center justify-center text-gray-400 text-xs border border-gray-300">
+                        [ 微信二维码占位 ]
+                    </div>
+                    <p className="text-xs text-gray-500 mb-2">WeChat ID: daXbuhuis</p>
+                    <p className="text-sm font-bold text-black mt-2">欢迎同行者交流学习</p>
+                </div>
+            </div>
+        );
+
+        // --- 全局金缮悬浮球组件 ---
+        const CrackedBallFAB = ({ onClick }) => {
+            const [isHovered, setIsHovered] = React.useState(false);
+            const [isClicking, setIsClicking] = React.useState(false);
+
+            const handleClick = () => {
+                setIsClicking(true);
+                setTimeout(() => {
+                    setIsClicking(false);
+                    onClick();
+                }, 800); // Wait for heal animation
+            };
+
+            return (
+                <div className="fixed bottom-28 right-8 z-[110] group">
+                    <div className="absolute right-full mr-4 top-1/2 -translate-y-1/2 bg-black text-white text-xs px-3 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                        开启我的整全行动
+                    </div>
+                    <button 
+                        onClick={handleClick}
+                        onMouseEnter={() => setIsHovered(true)}
+                        onMouseLeave={() => setIsHovered(false)}
+                        className="w-16 h-16 rounded-full bg-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center relative overflow-hidden transition-transform hover:scale-105 active:scale-95"
+                    >
+                        <div className="absolute inset-0 bg-gray-100 rounded-full"></div>
+                        <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full pointer-events-none">
+                            <path d="M 30 20 Q 40 40 35 50 T 45 70 T 60 85" fill="none" stroke="#d4af37" strokeWidth="3" strokeLinecap="round" className={`transition-all duration-700 ${isClicking ? 'animate-heal' : ''}`} />
+                        </svg>
+                        <div className={`transition-opacity duration-300 ${isClicking ? 'opacity-100' : 'opacity-0'} text-black absolute`}>
+                            <Icons.Zap size={24} />
+                        </div>
+                    </button>
+                </div>
+            );
+        };
+        
+        // --- 悬浮多任务球 ---
+        const FloatingDock = ({ minimizedDocs, onRestore }) => {
+            const [showList, setShowList] = React.useState(false);
+            if (minimizedDocs.length === 0) return null;
+            return (
+                <div className="fixed bottom-8 right-8 z-[120]">
+                    {showList && (
+                        <div className="absolute bottom-16 right-0 bg-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-2 w-48 mb-2 animate-bounce-slow">
+                            <div className="text-xs font-bold border-b border-gray-200 pb-2 mb-2">READING LIST</div>
+                            {minimizedDocs.map(doc => (
+                                <button key={doc.id} onClick={() => { onRestore(doc.id); setShowList(false); }} className="w-full text-left p-2 text-sm hover:bg-black hover:text-white transition-colors truncate">{doc.book}</button>
+                            ))}
+                        </div>
+                    )}
+                    <button onClick={() => { if (minimizedDocs.length === 1) { onRestore(minimizedDocs[0].id); } else { setShowList(!showList); } }} className="w-14 h-14 bg-neon-blue rounded-full border-2 border-white shadow-[0px_0px_15px_rgba(43,69,245,0.6)] flex items-center justify-center text-white animate-bounce-slow hover:scale-110 transition-transform">
+                        <div className="relative"><Icons.Book size={24} /><span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-white">{minimizedDocs.length}</span></div>
+                    </button>
+                </div>
+            );
+        };
+
+        const BookListModal = ({ onClose }) => (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                <div className="absolute inset-0 bg-neon-blue/20 backdrop-blur-md" onClick={onClose}></div>
+                <div className="relative bg-[#f4f4f0] border-4 border-black max-w-md w-full p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col items-center text-center">
+                    <button onClick={onClose} className="absolute top-4 right-4 hover:rotate-90 transition-transform"><Icons.X size={24}/></button>
+                    <div className="mb-4 text-neon-blue animate-pulse"><Icons.Star size={48}/></div>
+                    <h3 className="text-2xl font-black mb-2">全人共创计划</h3>
+                    <div className="w-16 h-1 bg-black mb-6"></div>
+                    <p className="text-sm font-bold text-gray-600 mb-6 leading-relaxed">欢迎提交推荐书籍或加入社群。</p>
+                    {/* TODO: 替换为实际的表单链接 */}
+                    <a href="#" className="w-full py-3 bg-black text-white font-bold hover:bg-neon-blue hover:text-white transition-colors border-2 border-black mb-3">提交推荐文献</a>
+                    {/* TODO: 替换为实际的社群加入链接 */}
+                    <a href="#" className="w-full py-3 bg-white text-black font-bold border-2 border-black hover:bg-black hover:text-white transition-colors">加入学习社群</a>
+                </div>
+            </div>
+        );
+
+        const CustomScrollbar = ({ scrollRef }) => {
+            const [thumbLeft, setThumbLeft] = React.useState(0);
+            const [isDragging, setIsDragging] = React.useState(false);
+            const trackRef = React.useRef(null);
+            React.useEffect(() => {
+                const container = scrollRef.current;
+                const updateThumb = () => {
+                    if (!container || !trackRef.current) return;
+                    const { scrollLeft, scrollWidth, clientWidth } = container;
+                    const maxScroll = scrollWidth - clientWidth;
+                    if (maxScroll > 0) {
+                        const trackWidth = trackRef.current.clientWidth;
+                        const thumbWidth = 40; 
+                        const maxThumbMove = trackWidth - thumbWidth;
+                        const newLeft = (scrollLeft / maxScroll) * maxThumbMove;
+                        setThumbLeft(newLeft);
+                    }
+                };
+                container.addEventListener('scroll', updateThumb);
+                window.addEventListener('resize', updateThumb);
+                updateThumb();
+                return () => {
+                    container.removeEventListener('scroll', updateThumb);
+                    window.removeEventListener('resize', updateThumb);
+                };
+            }, [scrollRef]);
+            const handleMouseDown = (e) => {
+                setIsDragging(true);
+                const startX = e.clientX;
+                const startLeft = thumbLeft;
+                const container = scrollRef.current;
+                const handleMouseMove = (moveEvent) => {
+                    if (!trackRef.current) return;
+                    const maxScroll = container.scrollWidth - container.clientWidth;
+                    const trackWidth = trackRef.current.clientWidth;
+                    const thumbWidth = 40;
+                    const maxThumbMove = trackWidth - thumbWidth;
+                    const deltaX = moveEvent.clientX - startX;
+                    let newLeft = startLeft + deltaX;
+                    newLeft = Math.max(0, Math.min(newLeft, maxThumbMove));
+                    const scrollRatio = newLeft / maxThumbMove;
+                    container.scrollLeft = scrollRatio * maxScroll;
+                };
+                const handleMouseUp = () => {
+                    setIsDragging(false);
+                    document.removeEventListener('mousemove', handleMouseMove);
+                    document.removeEventListener('mouseup', handleMouseUp);
+                };
+                document.addEventListener('mousemove', handleMouseMove);
+                document.addEventListener('mouseup', handleMouseUp);
+            };
+            return (
+                <div className="w-full flex justify-center mt-8">
+                    <div ref={trackRef} className="w-32 md:w-64 h-2 bg-gray-200 rounded-full relative cursor-pointer" onClick={(e) => e.stopPropagation()}>
+                        <div className={`absolute top-1/2 -translate-y-1/2 w-10 h-4 bg-black rounded-full shadow-md cursor-grab active:cursor-grabbing hover:bg-neon-blue transition-colors ${isDragging ? 'bg-neon-blue scale-110' : ''}`} style={{ left: thumbLeft }} onMouseDown={handleMouseDown}></div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- Main App Component ---
+        const App = () => {
+            const [modalContent, setModalContent] = React.useState(null); 
+            const [communityModal, setCommunityModal] = React.useState(null); 
+            const [theoryMenuOpen, setTheoryMenuOpen] = React.useState(false); 
+            const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false); 
+            const [bookListOpen, setBookListOpen] = React.useState(false); 
+            const [actionMenuOpen, setActionMenuOpen] = React.useState(false); 
+            const [founderModalOpen, setFounderModalOpen] = React.useState(false); 
+            const [activeAction, setActiveAction] = React.useState(null); 
+            const [activeCategory, setActiveCategory] = React.useState("all"); 
+            const [isTransitioning, setIsTransitioning] = React.useState(false);
+            const [activeDocs, setActiveDocs] = React.useState([]);
+
+            const theoryScrollRef = React.useRef(null);
+            const theoryRafRef = React.useRef(null);
+            const theoryPosRef = React.useRef(0);
+            const isDraggingTheory = React.useRef(false);
+            const startX = React.useRef(0);
+            const startScrollLeft = React.useRef(0);
+            const velocityRef = React.useRef(0);
+            const lastMoveTime = React.useRef(0);
+            const lastMoveX = React.useRef(0);
+            const actionScrollRef = React.useRef(null);
+
+            const filteredTheories = React.useMemo(() => {
+                let result = [];
+                if (activeCategory === "all") {
+                    const uniqueCategories = [...new Set(theories.map(t => t.category))];
+                    const grouped = uniqueCategories.map(cat => theories.filter(t => t.category === cat));
+                    const interleaved = [];
+                    const maxLen = Math.max(...grouped.map(g => g.length));
+                    for (let i = 0; i < maxLen; i++) {
+                        grouped.forEach(group => { if (group[i]) interleaved.push(group[i]); });
+                    }
+                    result = interleaved;
+                } else {
+                    result = theories.filter(t => t.category === activeCategory);
+                }
+                return result;
+            }, [activeCategory]);
+
+            React.useEffect(() => {
+                const container = theoryScrollRef.current;
+                if (!container || filteredTheories.length === 0) return;
+
+                const baseSpeed = 0.3; 
+                let speed = baseSpeed;
+                
+                const animate = () => {
+                    if (!isDraggingTheory.current && container.children.length > 0) {
+                        theoryPosRef.current += speed;
+                        const maxScroll = container.scrollWidth / 2; 
+                        if (theoryPosRef.current >= maxScroll) { theoryPosRef.current = 0; }
+                        container.scrollLeft = theoryPosRef.current;
+                    }
+                    theoryRafRef.current = requestAnimationFrame(animate);
+                };
+                theoryPosRef.current = 0; 
+                cancelAnimationFrame(theoryRafRef.current);
+                theoryRafRef.current = requestAnimationFrame(animate);
+                return () => cancelAnimationFrame(theoryRafRef.current);
+            }, [filteredTheories]); 
+
+            const handleTheoryMouseDown = (e) => {
+                isDraggingTheory.current = true;
+                startX.current = e.pageX || e.touches[0].pageX;
+                startScrollLeft.current = theoryPosRef.current;
+                lastMoveX.current = startX.current;
+                lastMoveTime.current = Date.now();
+                velocityRef.current = 0;
+            };
+
+            const handleTheoryMouseMove = (e) => {
+                if (!isDraggingTheory.current) return;
+                e.preventDefault(); 
+                const x = e.pageX || e.touches[0].pageX;
+                const walk = (x - startX.current) * 1.5; 
+                theoryPosRef.current = startScrollLeft.current - walk;
+                
+                const now = Date.now();
+                const dt = now - lastMoveTime.current;
+                const dx = x - lastMoveX.current;
+                if (dt > 0) velocityRef.current = -dx / dt * 10; 
+                lastMoveX.current = x;
+                lastMoveTime.current = now;
+
+                if (theoryScrollRef.current) theoryScrollRef.current.scrollLeft = theoryPosRef.current;
+            };
+
+            const handleTheoryMouseUp = () => { isDraggingTheory.current = false; };
+
+            const handleCategoryChange = (catId) => {
+                if (catId === activeCategory) return;
+                setIsTransitioning(true);
+                setTheoryMenuOpen(false); 
+                setTimeout(() => {
+                    setActiveCategory(catId);
+                    setIsTransitioning(false);
+                }, 300);
+            };
+
+            const scrollTo = (id) => { document.getElementById(id).scrollIntoView({ behavior: 'smooth' }); setMobileMenuOpen(false); };
+            const openTheory = (theory) => { setModalContent(theory); };
+            const openCommunity = (platform) => { setCommunityModal(platform); };
+            const openPdf = (theory) => {
+                if (!activeDocs.find(d => d.id === theory.id)) { setActiveDocs([...activeDocs, { ...theory, isMinimized: false }]); } 
+                else { setActiveDocs(activeDocs.map(d => d.id === theory.id ? { ...d, isMinimized: false } : d)); }
+                setModalContent(null); 
+            };
+            const minimizePdf = (id) => { setActiveDocs(activeDocs.map(d => d.id === id ? { ...d, isMinimized: true } : d)); };
+            const restorePdf = (id) => { setActiveDocs(activeDocs.map(d => d.id === id ? { ...d, isMinimized: false } : d)); };
+            const closePdf = (id) => { setActiveDocs(activeDocs.filter(d => d.id !== id)); };
+
+            return (
+                <div className="min-h-screen relative selection:bg-black selection:text-white">
+                    {/* 顶部导航 */}
+                    <nav className="fixed w-full z-50 px-6 py-4 flex justify-between items-center glass-nav text-daiqing transition-all">
+                        <div className="flex items-center gap-3 group cursor-pointer" onClick={() => scrollTo('lab')}>
+                            <div className="bg-white text-black px-2 py-1 transform -rotate-6 text-xl font-graffiti font-bold h-10 w-10 flex items-center justify-center shadow-lg">Oh!</div>
+                            <div className="flex flex-col items-center leading-none">
+                                <div className="text-[10px] font-bold tracking-[0.2em] uppercase opacity-80 mb-1 group-hover:text-neon-blue transition-colors">全人实验室</div>
+                                <div className="font-black text-2xl tracking-tighter text-daiqing">WHOLE</div>
+                            </div>
+                        </div>
+                        <div className="hidden md:flex gap-8 items-center">
+                            {[ { cn: "实验室", en: "LABORATORY", id: "lab" }, { cn: "理论库", en: "THEORY", id: "theory" }, { cn: "行动派", en: "ACTION", id: "action" }].map(item => (
+                                <button key={item.id} onClick={() => scrollTo(item.id)} className="flex flex-col items-center group">
+                                    <span className="font-bold text-base group-hover:text-neon-blue transition-colors">{item.cn}</span>
+                                    <span className="text-[9px] font-bold tracking-widest opacity-60 group-hover:opacity-100 scale-90">{item.en}</span>
+                                </button>
+                            ))}
+                            <button onClick={() => scrollTo('community')} className="flex flex-col items-center group bg-black text-white px-4 py-2 rounded-full hover:bg-neon-blue transition-colors shadow-lg">
+                                <span className="font-bold text-sm">全人社区</span><span className="text-[8px] font-bold tracking-widest opacity-80">COMMUNITY</span>
+                            </button>
+                        </div>
+                        <button className="md:hidden text-daiqing" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+                            {mobileMenuOpen ? <Icons.X size={24}/> : <Icons.Menu size={24}/>}
+                        </button>
+                        {mobileMenuOpen && (
+                            <div className="absolute top-full left-0 w-full bg-white/95 backdrop-blur-xl border-b border-gray-100 p-6 flex flex-col gap-6 md:hidden animate-fade-in shadow-xl text-black">
+                                {[ { cn: "实验室", en: "LABORATORY", id: "lab" }, { cn: "理论库", en: "THEORY", id: "theory" }, { cn: "行动派", en: "ACTION", id: "action" }, { cn: "全人社区", en: "COMMUNITY", id: "community" } ].map(item => (
+                                    <button key={item.id} onClick={() => scrollTo(item.id)} className="text-left">
+                                        <span className="block text-xl font-bold mb-1">{item.cn}</span><span className="block text-xs font-mono-tech text-gray-500 tracking-widest">{item.en}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </nav>
+
+                    {/* Page 1: 首页 */}
+                    <section id="lab" className="min-h-screen flex flex-col justify-center items-center px-6 relative border-b-4 border-black bg-[#f4f4f0]">
+                        <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-10 pointer-events-none">
+                            <div className="absolute top-20 left-10 text-9xl font-graffiti rotate-12">Broken?</div>
+                            <div className="absolute bottom-20 right-10 text-9xl font-graffiti -rotate-6">Whole!</div>
+                        </div>
+                        <div className="max-w-4xl w-full z-10 text-center md:text-left mt-24 md:mt-16">
+                            <div className="inline-block bg-black text-white px-4 py-1 mb-6 font-bold tracking-widest text-xs uppercase transform rotate-2">Whole Person Laboratory</div>
+                            <h1 className="text-6xl md:text-8xl font-black leading-none mb-4 tracking-tighter">Oh! <span className="text-neon-blue italic">Whole</span></h1>
+                            <h2 className="text-xl md:text-3xl font-bold mb-12 max-w-2xl leading-relaxed">我们被精心塑造为<span className="bg-black text-white px-2 mx-1">完美的零件</span>，<br/>却忘记了如何成为<span className="border-b-4 border-neon-blue px-1 mx-1">完整的人</span>。</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+                                <div className="brutalist-border p-6 bg-white relative">
+                                    <div className="absolute -top-3 -right-3 w-8 h-8 bg-neon-blue rounded-full"></div>
+                                    <h3 className="font-bold text-xl mb-3 flex items-center gap-2"><Icons.Zap size={20}/> 异化的代价</h3>
+                                    <p className="text-sm text-gray-600 leading-relaxed">教育剪断连接，职场剥夺勇气。这不是你的缺陷，这是现代性设计的系统漏洞。</p>
+                                </div>
+                                <div className="brutalist-border p-6 bg-white relative">
+                                    <div className="absolute -top-3 -right-3 w-8 h-8 bg-kintsugi-gold rounded-full"></div>
+                                    <h3 className="font-bold text-xl mb-3 flex items-center gap-2"><Icons.Puzzle size={20}/> 修复的哲学</h3>
+                                    <p className="text-sm text-gray-600 leading-relaxed">整全性不是完美无瑕，而是有意识的连接。像金缮一样承认裂痕，让微小的行动成为粘合剂。</p>
+                                </div>
+                            </div>
+                            <button onClick={() => scrollTo('theory')} className="group flex items-center gap-2 text-lg font-bold border-b-2 border-black pb-1 hover:text-neon-blue hover:border-neon-blue transition-colors">进入实验室 <Icons.ArrowRight className="group-hover:translate-x-1 transition-transform"/></button>
+                        </div>
+                    </section>
+
+                    {/* Page 2: 理论流动展示 */}
+                    <section id="theory" className="min-h-screen flex flex-col justify-center py-20 bg-white border-b-4 border-black overflow-hidden relative group/theory">
+                        <div className="px-6 mb-12 text-center relative z-10">
+                            <h2 className="text-4xl md:text-5xl font-black mb-2 flex justify-center items-center gap-4">THEORY <span className="font-graffiti font-normal text-6xl text-neon-blue">Flow</span></h2>
+                            <div className={`inline-flex items-center gap-2 px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest mt-2 transition-all duration-300 ${categories.find(c => c.id === activeCategory).color}`}>{categories.find(c => c.id === activeCategory).name}</div>
+                            <p className="text-gray-500 mt-4 text-sm">{activeCategory === 'all' ? "点击右侧汉堡菜单，释放不同维度的认知碎片" : categories.find(c => c.id === activeCategory).desc}</p>
+                        </div>
+                        <div className="absolute right-6 top-24 z-20 flex flex-col gap-4 items-end">
+                            <div className="relative">
+                                <button onClick={() => { setTheoryMenuOpen(!theoryMenuOpen); setBookListOpen(false); }} className={`w-12 h-12 flex items-center justify-center border-2 border-black transition-all duration-200 rounded-full shadow-lg active:scale-90 ${theoryMenuOpen ? 'bg-black text-white' : 'bg-white text-black hover:bg-black hover:text-white'}`}>{theoryMenuOpen ? <Icons.X size={24}/> : <Icons.Layers size={24} />}</button>
+                                {theoryMenuOpen && (
+                                    <div className="absolute right-0 top-14 w-72 bg-white border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] animate-fade-in origin-top-right overflow-hidden">
+                                        <div className="p-3 border-b border-black font-bold bg-black text-white text-xs tracking-widest text-center">SELECT DIMENSION</div>
+                                        {categories.map(cat => (
+                                            <button key={cat.id} onClick={() => handleCategoryChange(cat.id)} className={`w-full text-left p-4 border-b border-gray-100 last:border-0 flex items-center gap-3 transition-all hover:pl-6 active:scale-95 origin-left ${cat.color}`}>
+                                                <span className={`p-1.5 rounded bg-white/20`}><cat.icon size={16} /></span>
+                                                <div className="flex flex-col"><span className="font-bold text-sm">{cat.name}</span>{cat.id !== 'all' && <span className="text-[10px] opacity-80 font-medium tracking-wide">{cat.desc}</span>}</div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                            <button onClick={() => setBookListOpen(true)} className="w-12 h-12 flex items-center justify-center bg-white border-2 border-black rounded-full shadow-lg hover:bg-neon-pink hover:text-white hover:border-white transition-all" title="共创/推荐"><Icons.Star size={24}/></button>
+                        </div>
+                        <div className={`transition-opacity duration-300 ${isTransitioning ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}>
+                            <div ref={theoryScrollRef} className="relative w-full mb-8 flex overflow-x-hidden cursor-grab active:cursor-grabbing" onMouseDown={handleTheoryMouseDown} onMouseMove={handleTheoryMouseMove} onMouseUp={handleTheoryMouseUp} onMouseLeave={handleTheoryMouseUp} onTouchStart={handleTheoryMouseDown} onTouchMove={handleTheoryMouseMove} onTouchEnd={handleTheoryMouseUp}>
+                                <div className="flex flex-nowrap" style={{ width: 'max-content' }}>
+                                    {/* 渲染8倍数据以确保铺满和循环 */}
+                                    {[...filteredTheories, ...filteredTheories, ...filteredTheories, ...filteredTheories, ...filteredTheories, ...filteredTheories, ...filteredTheories, ...filteredTheories].map((item, idx) => (
+                                        <div key={`t1-${idx}`} onClick={() => !isDraggingTheory.current && openTheory(item)} className={`card-deal-anim select-none mx-4 px-8 py-8 h-48 w-auto min-w-[280px] flex flex-col items-start justify-between border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-none transition-all whitespace-nowrap ${item.color} ${item.textColor}`}>
+                                            <div className="w-full flex justify-between items-start gap-4">
+                                                <div className="p-1.5 bg-white/20 rounded-full flex-shrink-0"><item.icon size={18} /></div>
+                                                <span className="font-mono-tech text-[10px] opacity-60 tracking-widest uppercase">No.0{item.id}</span>
+                                            </div>
+                                            <div><div className="text-3xl font-black leading-tight mb-2 pr-4">{item.keyword}</div><div className="text-xs font-bold font-graffiti tracking-wide opacity-80">{item.en}</div></div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="relative w-full -rotate-1 pointer-events-none">
+                                <div className="flex w-[200%] animate-scroll-reverse hover:[animation-play-state:paused]" style={{ animationDuration: "60s" }}>
+                                    {[...moodImages, ...moodImages].map((img, idx) => (
+                                        <div key={`img-${idx}`} className="mx-4 w-80 h-48 border-2 border-black flex-shrink-0 transition-all duration-500 overflow-hidden relative group">
+                                            <img src={img} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 grayscale hover:grayscale-0" alt="mood" />
+                                            <div className="absolute bottom-2 right-2 bg-black text-white text-[10px] px-2 py-1 font-bold tracking-widest opacity-0 group-hover:opacity-100 transition-opacity font-mono-tech">ART.0{idx + 1}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Page 3: 整全行动 */}
+                    <section id="action" className="min-h-screen py-20 px-6 bg-[#f4f4f0] border-b-4 border-black flex flex-col justify-center">
+                        <div className="max-w-6xl mx-auto w-full">
+                            <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
+                                <div>
+                                    <div className="font-bold tracking-widest mb-2 flex items-baseline gap-2">
+                                        <span className="font-rock text-7xl md:text-8xl leading-none transform -rotate-6 inline-block text-neon-blue mr-2">7</span> <span className="text-xl md:text-2xl text-neon-blue">DAYS ACTION LAB</span>
+                                    </div>
+                                    <h2 className="text-3xl md:text-4xl font-black leading-tight">微小修复，<br/>系统转变。</h2>
+                                </div>
+                                <div className="flex flex-col gap-4 max-w-md">
+                                    <button onClick={() => setActionMenuOpen(true)} className="self-start px-4 py-2 bg-neon-blue text-white font-bold text-xs uppercase tracking-widest border-2 border-black hover:bg-black transition-all shadow-lg flex items-center gap-2 group relative overflow-hidden">
+                                        <div className="absolute inset-0 w-full h-full bg-white opacity-0 group-hover:opacity-10 transition-opacity"></div>
+                                        <RunningManIcon /> 开启全人实验
+                                    </button>
+                                    <div className="text-sm md:text-base text-gray-600 font-medium">我们不谈宏大叙事。这里有10个“最小可行性修复方案”。不需要辞职，不需要巨款，只需要7天，找回一点掌控感。</div>
+                                </div>
+                            </div>
+                            <div ref={actionScrollRef} className="flex overflow-x-auto gap-6 pb-8 snap-x snap-mandatory scrollbar-hide -mx-6 px-6 md:mx-0 md:px-0">
+                                {actions.map((action, idx) => (
+                                    <div key={action.id} onClick={() => setActiveAction(action)} className="min-w-[300px] md:min-w-[350px] snap-center brutalist-border bg-white p-6 flex flex-col justify-between group hover:border-neon-blue transition-colors cursor-pointer">
+                                        <div>
+                                            <div className="flex justify-between items-start mb-6">
+                                                <span className="font-graffiti text-4xl text-gray-300 group-hover:text-black transition-colors">0{action.id}</span>
+                                                <div className="transform scale-75 origin-top-right text-black">{doodleAvatars[idx % doodleAvatars.length]}</div>
+                                            </div>
+                                            <div className="flex gap-1 mb-3">{action.tags.map(tag => (<span key={tag} className="text-[10px] uppercase border border-black px-1.5 py-0.5 rounded-full">{tag}</span>))}</div>
+                                            <h3 className="text-2xl font-bold mb-1">{action.title}</h3>
+                                            <div className="text-xs text-gray-400 uppercase tracking-wider mb-4 font-bold">{action.sub}</div>
+                                            <p className="text-gray-600 text-sm leading-relaxed">{action.desc}</p>
+                                        </div>
+                                        <div className="mt-6 w-full py-3 bg-black text-white font-bold text-center group-hover:bg-neon-blue transition-colors flex items-center justify-center gap-2 text-sm">查看详情 <Icons.ArrowRight size={14}/></div>
+                                    </div>
+                                ))}
+                                <div className="min-w-[300px] md:min-w-[350px] snap-center brutalist-border bg-neon-blue text-white p-6 flex flex-col justify-center items-center text-center relative overflow-hidden group">
+                                    <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity"></div>
+                                    <h3 className="text-3xl font-black mb-4">Ready?</h3>
+                                    <p className="text-sm mb-6 px-4">不知道从哪里开始？生成你的专属修复方案。</p>
+                                    <a href="#" className="bg-white text-neon-blue px-8 py-3 font-bold border-2 border-transparent hover:border-white hover:bg-transparent hover:text-white transition-all">开启我的整全行动</a>
+                                </div>
+                            </div>
+                            <CustomScrollbar scrollRef={actionScrollRef} />
+                        </div>
+                    </section>
+
+                    <section id="community" className="py-24 px-6 bg-[#1a1a1a] text-white">
+                        <div className="max-w-4xl mx-auto">
+                            <div className="text-center mb-16">
+                                <div className="inline-block border-2 border-white px-3 py-1 rounded-full mb-8 font-graffiti text-2xl animate-pulse">You are not alone</div>
+                                <h2 className="text-5xl md:text-7xl font-black mb-8">Oh! Whole Community</h2>
+                                <p className="text-xl md:text-2xl text-gray-400 max-w-2xl mx-auto">这不是社交俱乐部，这是<span className="text-white underline decoration-neon-blue decoration-4 underline-offset-4">修复伙伴</span>的营地。<br/>互助、见证、不比较。</p>
+                            </div>
+                            <div className="grid grid-cols-3 gap-3 md:gap-6 max-w-4xl mx-auto mb-12">
+                                {[ 
+                                    /* TODO: 确认社群跳转逻辑，如需更新链接，请修改 CommunityModal */
+                                    { id: 'wechat', nameCn: "微信社群", nameEn: "WECHAT GROUP", icon: <Icons.WeChat size={28}/> }, 
+                                    /* TODO: 确认社群跳转逻辑 */
+                                    { id: 'xhs', nameCn: "小红书", nameEn: "XIAOHONGSHU", icon: <Icons.XiaoHongShu size={28}/> }, 
+                                    /* TODO: 确认社群跳转逻辑 */
+                                    { id: 'mp', nameCn: "微信公众号", nameEn: "OFFICIAL ACCOUNT", icon: <Icons.WeChat size={28}/> }, 
+                                ].map((platform) => (
+                                    <button key={platform.id} onClick={() => openCommunity(platform)} className="flex flex-col items-center justify-center aspect-square border border-gray-700 hover:border-white hover:bg-gray-800 transition-all rounded-xl p-2 md:p-4 group">
+                                        <div className="text-gray-300 group-hover:text-white transition-colors mb-2 md:mb-4 transform group-hover:scale-110 duration-300"><div className="scale-75 md:scale-100">{platform.icon}</div></div>
+                                        <span className="text-xs md:text-lg font-light tracking-wide">{platform.nameCn}</span>
+                                        <span className="text-[8px] md:text-[10px] font-thin uppercase tracking-widest text-gray-500 mt-1 md:mt-2 scale-75 md:scale-100 origin-center text-nowrap">{platform.nameEn}</span>
+                                    </button>
+                                ))}
+                            </div>
+                            <div className="max-w-2xl mx-auto text-center border-t border-gray-800 pt-12 pb-8">
+                                <div onClick={() => setFounderModalOpen(true)} className="cursor-pointer group inline-block">
+                                    <BearLogo className="w-16 h-16 mx-auto mb-6 text-gray-500 opacity-80 group-hover:text-white group-hover:scale-110 transition-all" />
+                                </div>
+                                <h4 className="text-lg font-bold mb-6 text-gray-400 font-sans tracking-widest">发起人自白</h4>
+                                <div className="prose prose-sm mx-auto text-gray-400 font-sans font-light tracking-wide leading-loose space-y-6 px-4 text-justify">
+                                    <p>我是<span className="text-gray-300 font-normal border-b border-gray-600 pb-0.5">大X不会水</span>，目前正在一个公益组织开展青年发展的实践和研究。发起这个实验性行动时，我也是一个修复中的个体。我的技能曾分散在设计、写作、技术、研究、产品之间，彼此孤立。而我的兴趣也曾碎片化，每个都无法深入。</p>
+                                    <p>这个行动既是工具箱，也是我自己的修复记录。这些工具是我为自己开发的脚手架。而这个社群则是我为自己寻找同路人的途径。</p>
+                                    <p className="text-gray-300 italic border-l-2 border-gray-600 pl-4 py-2 my-6">“修复不是到达完美，而是在不完美中建立连接。<br/>完整不是没有裂痕，而是裂痕被连接成独特图案。”</p>
+                                    <p>欢迎你加入「全人实验室」，重新走向整全的自己，这里倡导行动者的互助，不做非在场的社交。</p>
+                                </div>
+                            </div>
+                            <footer className="text-gray-600 text-xs flex flex-col md:flex-row justify-center items-center gap-4 mt-8 pt-8 border-t border-gray-900"><span>© 2025 Oh! Whole Lab.</span><span className="hidden md:block">|</span><span>Design for Integrity.</span></footer>
+                        </div>
+                    </section>
+
+                    {activeAction && <ActionModal action={activeAction} onClose={() => setActiveAction(null)} />}
+                    {modalContent && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setModalContent(null)}></div>
+                            <div className={`relative border-4 border-black shadow-[8px_8px_0px_0px_rgba(255,255,255,0.5)] max-w-lg w-full p-8 transform rotate-1 ${modalContent.color} ${modalContent.textColor}`}>
+                                <button onClick={() => setModalContent(null)} className="absolute top-4 right-4 hover:rotate-90 transition-transform"><Icons.X size={24}/></button>
+                                <div className="inline-block px-3 py-1 text-xs font-bold mb-6 border border-current bg-white/20">THEORY SOURCE</div>
+                                <h3 className="text-4xl font-black mb-2">{modalContent.keyword}</h3>
+                                <div className="text-sm font-bold opacity-80 mb-6 font-mono">Book: {modalContent.book} <br/>Author: {modalContent.author}</div>
+                                <p className="text-lg leading-relaxed font-bold mb-6">“{modalContent.desc}”</p>
+                                <div className="bg-black/10 p-4 rounded mb-8 text-sm leading-relaxed backdrop-blur-sm border border-black/5"><span className="font-bold block mb-1">THEORY BRIEF:</span>{modalContent.intro}</div>
+                                <div className="flex justify-end items-center mt-4">
+                                    <button onClick={() => openPdf(modalContent)} className={`px-6 py-2 font-bold border-2 flex items-center gap-2 hover:-translate-y-1 transition-transform shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)] ${modalContent.textColor === 'text-white' ? 'bg-white text-black border-black' : 'bg-black text-white border-white'}`}><Icons.Book size={16}/> 阅读原典 PDF</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    {bookListOpen && <BookListModal onClose={() => setBookListOpen(false)} />}
+                    {activeDocs.map(doc => !doc.isMinimized && (<PdfReader key={doc.id} doc={doc} onClose={() => closePdf(doc.id)} onMinimize={() => minimizePdf(doc.id)}/>))}
+                    <FloatingDock minimizedDocs={activeDocs.filter(d => d.isMinimized)} onRestore={restorePdf}/>
+                    {actionMenuOpen && <WholeActionMenuModal onClose={() => setActionMenuOpen(false)} />}
+                    {founderModalOpen && <FounderContactModal onClose={() => setFounderModalOpen(false)} />}
+                    <CrackedBallFAB onClick={() => setActionMenuOpen(true)} />
+                    {communityModal && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                            <div className="absolute inset-0 bg-white/10 backdrop-blur-xl" onClick={() => setCommunityModal(null)}></div>
+                            <div className="relative bg-white text-black border border-gray-200 max-w-sm w-full p-8 shadow-2xl flex flex-col items-center text-center animate-fade-in-up">
+                                <button onClick={() => setCommunityModal(null)} className="absolute top-4 right-4 text-gray-400 hover:text-black transition-colors"><Icons.X size={20}/></button>
+                                <div className="mb-6 mt-2 p-4 bg-gray-50 rounded-full border border-gray-100"><div className="text-black animate-pulse">{communityModal.icon}</div></div>
+                                <h3 className="text-xl font-bold mb-2 tracking-tight">即将前往 {communityModal.nameCn}</h3>
+                                <p className="text-xs font-mono text-gray-400 uppercase tracking-widest mb-8">External Link Redirection</p>
+                                <div className="w-full text-left text-xs text-gray-500 mb-8 px-2 space-y-2 border-l-2 border-gray-200 pl-4"><p>您即将离开全人实验室。</p><p>请注意：本站为非营利性个人分享社区，请勿轻信任何涉及资金往来的信息。</p></div>
+                                {/* TODO: 替换为实际的社区链接或路由 */}
+                                <a href="#" target="_blank" className="w-full py-3 bg-black text-white text-sm font-bold hover:bg-gray-800 transition-all flex items-center justify-center gap-2 group" onClick={() => setCommunityModal(null)}>确认前往 <Icons.ArrowRight size={14} className="group-hover:translate-x-1 transition-transform"/></a>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
